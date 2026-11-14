@@ -16,10 +16,17 @@
 <style>
 :root{
   --bg:#2a2a2d; --bg2:#202023; --panel:#323236; --line:#47474d;
+  --hud:rgba(50,50,54,.88); --hud-hover:rgba(74,74,80,.95); --hover:#44444a; --grip:#5a5a62; --thumb:#5f5f67;
+  --frame-fill:rgba(255,255,255,.035); --frame-line:rgba(255,255,255,.16); --veil:rgba(20,20,22,.82);
   --text:#ececef; --muted:#9c9ca6; --accent:#f2b84b; --accent-ink:#2a1f05;
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
   --cols:1; --trayW:150px; --trayH:220px;
+}
+:root.light{
+  --bg:#e9e9ec; --bg2:#dcdce1; --panel:#f8f8fa; --line:#bdbdc6; --text:#1f1f23; --muted:#62626c; --accent:#e8a21f;
+  --hud:rgba(255,255,255,.92); --hud-hover:#fff; --hover:#ececf0; --grip:#a9a9b3; --thumb:#a0a0aa;
+  --frame-fill:rgba(0,0,0,.04); --frame-line:rgba(0,0,0,.22); --veil:rgba(233,233,236,.85);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
@@ -34,7 +41,7 @@ input,button{-webkit-user-select:auto;user-select:auto}
   padding:var(--sat) var(--sar) var(--sab) var(--sal)}
 #stage{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden;touch-action:none;background:var(--bg)}
 #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
-#frame{position:absolute;left:0;top:0;background:rgba(255,255,255,.035);outline:4px dashed rgba(255,255,255,.16)}
+#frame{position:absolute;left:0;top:0;background:var(--frame-fill);outline:4px dashed var(--frame-line)}
 #ghost{position:absolute;left:0;top:0;opacity:0;transition:opacity .9s;pointer-events:none;z-index:0}
 body.guide #ghost{opacity:.22}
 #world.complete #ghost{opacity:1;z-index:5}
@@ -44,24 +51,24 @@ body.guide #ghost{opacity:.22}
 .wp.flash{filter:brightness(1.45)}
 
 #hud{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap;z-index:30;max-width:calc(100% - 20px)}
-.ib,.chip{height:38px;border-radius:12px;border:1px solid var(--line);background:rgba(50,50,54,.88);
+.ib,.chip{height:38px;border-radius:12px;border:1px solid var(--line);background:var(--hud);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:inline-flex;align-items:center;justify-content:center}
 .ib{width:38px;padding:0}
-.ib:hover,.ib.on{background:rgba(74,74,80,.95)}
+.ib:hover,.ib.on{background:var(--hud-hover)}
 .ib.on{border-color:var(--accent);color:var(--accent)}
 .chip{padding:0 12px;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
 .chip b{color:var(--text);font-weight:600}
 .ib svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 #toast{position:fixed;left:50%;bottom:calc(24px + var(--sab));transform:translateX(-50%);z-index:300;
-  background:#111;border:1px solid var(--line);padding:10px 16px;border-radius:12px;max-width:min(92vw,520px);
+  background:#111;color:#ececef;border:1px solid #47474d;padding:10px 16px;border-radius:12px;max-width:min(92vw,520px);
   text-align:center;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s}
 #toast.show{opacity:1}
 
 /* ---------- bandeja ---------- */
 #resizer{flex:none;width:16px;margin:0 -8px;z-index:20;cursor:col-resize;touch-action:none;position:relative}
 #resizer::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:48px;border-radius:2px;
-  background:#5a5a62;transform:translate(-50%,-50%)}
+  background:var(--grip);transform:translate(-50%,-50%)}
 #resizer:hover::after,#resizer.drag::after{background:var(--accent)}
 #tray{flex:none;width:var(--trayW);display:flex;flex-direction:column;min-height:0;background:var(--bg2);
   border-left:1px solid var(--line)}
@@ -72,12 +79,12 @@ body.guide #ghost{opacity:.22}
 #trayHead b{color:var(--text)}
 #trayHead button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel);
   font-size:16px;line-height:1;padding:0}
-#trayHead button:hover{background:#44444a}
+#trayHead button:hover{background:var(--hover)}
 #trayList{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:grid;
   grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:8px;padding:8px;align-content:start;
-  touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:auto;scrollbar-color:#6a6a72 transparent}
+  touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:auto;scrollbar-color:var(--thumb) transparent}
 #trayList::-webkit-scrollbar{width:12px}
-#trayList::-webkit-scrollbar-thumb{background:#5f5f67;border-radius:6px;border:3px solid var(--bg2)}
+#trayList::-webkit-scrollbar-thumb{background:var(--thumb);border-radius:6px;border:3px solid var(--bg2)}
 .tp{width:100%;height:auto;display:block;touch-action:pan-y;cursor:grab;-webkit-user-drag:none}
 #tray.few .tp{filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}
 .tp.src{visibility:hidden}
@@ -95,7 +102,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
 #menu header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex:none}
 #menu h1{font-size:20px;margin:0;flex:1;font-weight:650;letter-spacing:.2px}
 .btn{height:40px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-weight:550}
-.btn:hover{background:#44444a}
+.btn:hover{background:var(--hover)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .btn.primary:hover{filter:brightness(1.07);background:var(--accent)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -139,7 +146,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
 #count{width:100%;accent-color:var(--accent);height:26px;margin:0}
 
 /* ---------- carregando / final ---------- */
-.overlay2{position:fixed;inset:0;z-index:200;background:rgba(20,20,22,.82);display:flex;align-items:center;justify-content:center;padding:20px}
+.overlay2{position:fixed;inset:0;z-index:200;background:var(--veil);display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center}
 .card h2{margin:0 0 6px;font-size:22px}
 .card p{margin:6px 0;color:var(--muted)}
@@ -148,6 +155,10 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
 #bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s}
 #doneCredit{font-size:12px}
 #doneCredit a{color:var(--muted)}
+.wp,.tp{transition:transform .15s}
+#source{width:100%;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--text);padding:0 10px;font-size:15px;margin-bottom:8px}
+.opt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:6px;cursor:pointer}
+.opt input{width:18px;height:18px;accent-color:var(--accent)}
 @media (max-width:520px){ #menu header{padding:10px 12px} #menuScroll{padding:12px} #menuFoot{padding-left:12px;padding-right:12px} }
 </style>
 </head>
@@ -160,15 +171,21 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
       <button class="ib" id="btnMenu" title="Novo quebra-cabeça" aria-label="Novo quebra-cabeça">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <span class="chip" title="Peças no lugar"><b id="hudPlaced">0</b>&nbsp;/&nbsp;<span id="hudTotal">0</span></span>
-      <span class="chip" id="hudTime" title="Tempo">0:00</span>
+      <span class="chip" id="hudTime" title="Tempo" hidden>0:00</span>
+      <button class="ib" id="btnTidy" title="Guardar peças soltas na bandeja" aria-label="Guardar peças soltas na bandeja">
+        <svg viewBox="0 0 24 24"><path d="M4 14v5h16v-5M12 4v10M8 10l4 4 4-4"/></svg></button>
       <button class="ib" id="btnGuide" title="Mostrar/ocultar imagem de guia" aria-label="Guia">
         <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="ib" id="btnTime" title="Mostrar/ocultar o tempo" aria-label="Tempo">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
       <button class="ib" id="btnZoomOut" title="Reduzir" aria-label="Reduzir">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg></button>
       <button class="ib" id="btnZoomIn" title="Ampliar" aria-label="Ampliar">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg></button>
       <button class="ib" id="btnFit" title="Ajustar à tela" aria-label="Ajustar à tela">
         <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="ib" id="btnTheme" title="Fundo claro/escuro" aria-label="Fundo claro/escuro">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button>
     </div>
   </div>
   <div id="resizer" title="Arraste para redimensionar a bandeja" role="separator"></div>
@@ -187,6 +204,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
 <div id="menu">
   <header>
     <h1>Quebra-cabeça</h1>
+    <button class="btn" id="btnThemeMenu" title="Fundo claro/escuro">◐ Tema</button>
     <button class="btn" id="btnInstall" hidden>Instalar app</button>
     <button class="btn" id="btnIosHint" hidden>Instalar</button>
     <button class="btn" id="btnCloseMenu" hidden>Voltar ao jogo</button>
@@ -197,6 +215,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
       <button data-tab="upload">Enviar imagem</button>
     </div>
     <section id="tabGallery">
+      <select id="source" aria-label="Banco de imagens"></select>
       <form id="searchForm">
         <input id="q" type="search" placeholder="Buscar imagens (ex.: montanha, flores, gato)" autocomplete="off" enterkeyhint="search">
         <button class="btn" type="submit">Buscar</button>
@@ -206,7 +225,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
       <div id="grid"></div>
       <div id="gstatus"></div>
       <button class="btn" id="btnMore" hidden>Carregar mais</button>
-      <p class="note">Fotos do Wikimedia Commons (imagens em destaque, com licenças livres). Buscas em inglês costumam trazer mais resultados.</p>
+      <p class="note" id="srcNote"></p>
     </section>
     <section id="tabUpload" hidden>
       <label id="drop" for="file">
@@ -225,6 +244,7 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
     <div id="countBox">
       <label><span>Número de peças</span><b id="countLabel"></b></label>
       <input id="count" type="range" min="0" max="13" step="1">
+      <label class="opt"><input type="checkbox" id="optRotate"> Girar as peças (mais difícil; duplo clique/toque gira)</label>
     </div>
     <button class="btn primary" id="btnStart" disabled>Começar</button>
   </footer>
@@ -256,7 +276,7 @@ const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 /* ================= preferências (por navegador) ================= */
 const LS_KEY = 'quebra-cabeca.prefs.v1';
 const COUNTS = [12,24,35,48,63,80,100,150,200,300,400,500,750,1000];
-const defaults = {countIdx:3, trayW:0, trayH:0, cellP:0, guide:false, query:'landscape', label:'Paisagens'};
+const defaults = {countIdx:3, trayW:0, trayH:0, cellP:0, guide:false, query:'landscape', label:'Paisagens', rotate:false, showTime:false, theme:'dark', source:'commons-featured'};
 let prefs = (() => { try { return {...defaults, ...JSON.parse(localStorage.getItem(LS_KEY)||'{}')}; } catch { return {...defaults}; } })();
 const savePrefs = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(prefs)); } catch {} };
 
@@ -316,7 +336,7 @@ addEventListener('resize', () => { applyLayout(); afterLayout(); });
 
 /* ================= estado do quebra-cabeça ================= */
 let W=0,H=0, cols=0, rows=0, pw=0, ph=0, m=0, T=0, cw=0, ch=0;
-let E=null, base=null, pieces=[], zTop=10, placed=0, buildId=0, current=null;
+let E=null, base=null, pieces=[], grid=[], zTop=10, placed=0, buildId=0, current=null;
 let timer=null, t0=0, completed=false;
 const view = {x:0,y:0,k:1,touched:false};
 const hitCtx = document.createElement('canvas').getContext('2d');
@@ -380,7 +400,8 @@ function makePiece(r,c){
   ctx.lineJoin='round'; ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.stroke(path);
   ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.save(); ctx.translate(-.8,-.8); ctx.clip(path); ctx.stroke(path); ctx.restore();
   cv.draggable=false;
-  const p={r,c,el:cv,path,state:'tray',x:0,y:0,z:0,tx:c*pw-m,ty:r*ph-m};
+  const p={r,c,el:cv,path,state:'tray',x:0,y:0,z:0,tx:c*pw-m,ty:r*ph-m,rot:0,deg:0,g:null};
+  p.g={pieces:[p],locked:false};
   cv._piece=p; cv.className='tp';
   return p;
 }
@@ -408,7 +429,8 @@ async function buildPuzzle(img, n, info){
     list.push(makePiece(r,c));
     if(performance.now()-last>30){ setLoading(`Cortando peças… ${list.length}/${total}`, list.length/total); await nextFrame(); last=performance.now(); if(id!==buildId) return; }
   }
-  pieces=list; placed=0; completed=false; zTop=10;
+  pieces=list; grid=list; placed=0; completed=false; zTop=10; rotMode=!!prefs.rotate;
+  if(rotMode) list.forEach(p=>{ p.deg=90*Math.floor(Math.random()*4); p.rot=p.deg%360; applyRot(p); });
   const order=list.slice(); for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
   const frag=document.createDocumentFragment(); order.forEach(p=>frag.appendChild(p.el)); trayList.appendChild(frag);
   current={img,n,info};
@@ -423,7 +445,7 @@ function clearBoard(){
   pieces.forEach(p=>p.el.remove()); pieces=[]; trayList.textContent='';
   const g=$('#ghost'); if(g) g.remove();
   world.classList.remove('complete'); dragLayer.textContent='';
-  drag=null; pending=null; W=0; $('#hudPlaced').textContent='0'; $('#hudTotal').textContent='0';
+  drag=null; pending=null; lastTap=null; grid=[]; W=0; $('#hudPlaced').textContent='0'; $('#hudTotal').textContent='0';
 }
 
 /* ---------- HUD / tempo ---------- */
@@ -440,8 +462,23 @@ function updateHud(){
 }
 
 /* ================= arrastar peças ================= */
-let drag=null, pending=null;
+let drag=null, pending=null, lastTap=null, rotMode=false;
+const DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
 const overTray = (x,y) => { const r=trayEl.getBoundingClientRect(); return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom; };
+const pieceAt = (r,c) => (r<0||c<0||r>=rows||c>=cols) ? null : grid[r*cols+c];
+const applyRot = p => { p.el.style.transform = p.deg ? `rotate(${p.deg}deg)` : ''; };
+
+/* toque duplo = girar (só no modo "girar peças") */
+function noteTap(p){
+  const now=performance.now();
+  if(lastTap && lastTap.p===p && now-lastTap.t<400){ lastTap=null; if(rotMode) rotatePiece(p); }
+  else lastTap={p,t:now};
+}
+function rotatePiece(p){
+  if(p.g.pieces.length>1 || p.state==='locked') return;
+  p.deg+=90; p.rot=((p.deg%360)+360)%360; applyRot(p);
+  if(p.state==='world') snapGroup(p.g);
+}
 
 trayList.addEventListener('contextmenu', e=>e.preventDefault());
 trayList.addEventListener('pointerdown', e => {
@@ -458,23 +495,27 @@ function cancelPending(){ if(pending){ clearTimeout(pending.timer); pending=null
 function beginTrayDrag(pd){
   clearTimeout(pd.timer); pending=null;
   const p=pd.p, src=p.el, rect=src.getBoundingClientRect();
-  const dw=cw*view.k, dh=ch*view.k, ratio=dw/rect.width;
+  const dw=cw*view.k, dh=ch*view.k, ratio=dw/src.offsetWidth;
   const ghost=document.createElement('canvas'); ghost.width=cw; ghost.height=ch; ghost.getContext('2d').drawImage(src,0,0);
   ghost.className='floating'; ghost.style.width=dw+'px'; ghost.style.height=dh+'px';
-  const offX=(pd.x-rect.left)*ratio, offY=(pd.y-rect.top)*ratio;
-  ghost.style.left=(pd.x-offX)+'px'; ghost.style.top=(pd.y-offY)+'px';
+  if(p.deg) ghost.style.transform=`rotate(${p.deg}deg)`;
+  const ox=(pd.x-(rect.left+rect.width/2))*ratio, oy=(pd.y-(rect.top+rect.height/2))*ratio;
+  ghost.style.left=(pd.x-ox-dw/2)+'px'; ghost.style.top=(pd.y-oy-dh/2)+'px';
   dragLayer.appendChild(ghost); src.classList.add('src');
-  drag={mode:'float',p,id:pd.id,ghost,offX,offY};
+  drag={mode:'float',p,id:pd.id,ghost,ox,oy,dw,dh};
 }
 function startWorldDrag(p,e){
-  const w=toWorld(e.clientX,e.clientY);
-  p.z=++zTop; p.el.style.zIndex=p.z; p.el.classList.add('lift');
-  drag={mode:'world',p,id:e.pointerId,gx:w.x-p.x,gy:w.y-p.y};
+  const g=p.g, w=toWorld(e.clientX,e.clientY); zTop++;
+  g.pieces.forEach(q=>{ q.z=zTop; q.el.style.zIndex=zTop; q.el.classList.add('lift'); q.sx=q.x; q.sy=q.y; });
+  drag={mode:'world',p,g,id:e.pointerId,gx:w.x,gy:w.y,sx:e.clientX,sy:e.clientY};
 }
 addEventListener('pointermove', e => {
   if(drag && e.pointerId===drag.id){
-    if(drag.mode==='float'){ drag.ghost.style.left=(e.clientX-drag.offX)+'px'; drag.ghost.style.top=(e.clientY-drag.offY)+'px'; }
-    else { const w=toWorld(e.clientX,e.clientY), p=drag.p; p.x=w.x-drag.gx; p.y=w.y-drag.gy; p.el.style.left=p.x+'px'; p.el.style.top=p.y+'px'; }
+    if(drag.mode==='float'){ drag.ghost.style.left=(e.clientX-drag.ox-drag.dw/2)+'px'; drag.ghost.style.top=(e.clientY-drag.oy-drag.dh/2)+'px'; }
+    else {
+      const w=toWorld(e.clientX,e.clientY), dx=w.x-drag.gx, dy=w.y-drag.gy;
+      for(const q of drag.g.pieces){ q.x=q.sx+dx; q.y=q.sy+dy; q.el.style.left=q.x+'px'; q.el.style.top=q.y+'px'; }
+    }
     trayEl.classList.toggle('drop', overTray(e.clientX,e.clientY));
     return;
   }
@@ -485,20 +526,26 @@ addEventListener('pointermove', e => {
     else if(d>9){ if(Math.abs(dx)>Math.abs(dy)*1.1) beginTrayDrag(pending); else cancelPending(); }
   }
 });
+function restoreGroup(g){ for(const q of g.pieces){ q.x=q.sx; q.y=q.sy; q.el.style.left=q.x+'px'; q.el.style.top=q.y+'px'; } }
 function endDrag(e,cancel){
-  if(pending && e.pointerId===pending.id) cancelPending();
+  if(pending && e.pointerId===pending.id){
+    const t=pending; cancelPending();
+    if(!cancel && Math.hypot(e.clientX-t.sx,e.clientY-t.sy)<8) noteTap(t.p);
+  }
   if(!drag || e.pointerId!==drag.id) return;
   const d=drag; drag=null; trayEl.classList.remove('drop');
-  const p=d.p, over=!cancel && overTray(e.clientX,e.clientY);
+  const over=!cancel && overTray(e.clientX,e.clientY);
   if(d.mode==='float'){
-    const left=parseFloat(d.ghost.style.left), top=parseFloat(d.ghost.style.top);
+    const p=d.p, left=parseFloat(d.ghost.style.left), top=parseFloat(d.ghost.style.top);
     d.ghost.remove(); p.el.classList.remove('src');
     if(over||cancel) return;
     const r=stage.getBoundingClientRect();
     placeInWorld(p,(left-r.left-view.x)/view.k,(top-r.top-view.y)/view.k);
   } else {
-    p.el.classList.remove('lift');
-    if(over) returnToTray(p); else trySnap(p);
+    const g=d.g; g.pieces.forEach(q=>q.el.classList.remove('lift'));
+    const moved=Math.hypot(e.clientX-d.sx,e.clientY-d.sy);
+    if(cancel || moved<6 || (over && g.pieces.length>1)){ restoreGroup(g); if(!cancel && moved<6) noteTap(d.p); return; }
+    if(over) returnToTray(d.p); else snapGroup(g);
   }
 }
 addEventListener('pointerup', e=>endDrag(e,false));
@@ -506,30 +553,77 @@ addEventListener('pointercancel', e=>endDrag(e,true));
 
 function placeInWorld(p,x,y){
   p.state='world'; p.x=x; p.y=y; p.z=++zTop;
-  const el=p.el; el.className='wp'; el.style.cssText=`width:${cw}px;height:${ch}px;left:${x}px;top:${y}px;z-index:${p.z}`;
-  world.appendChild(el); updateHud(); trySnap(p);
+  const el=p.el; el.className='wp';
+  el.style.cssText=`width:${cw}px;height:${ch}px;left:${x}px;top:${y}px;z-index:${p.z}`;
+  applyRot(p); world.appendChild(el); updateHud(); snapGroup(p.g);
 }
 function returnToTray(p){
-  p.state='tray'; const el=p.el; el.className='tp'; el.style.cssText=''; trayList.appendChild(el); updateHud();
+  p.state='tray'; const el=p.el; el.className='tp'; el.style.cssText=''; applyRot(p);
+  trayList.appendChild(el); updateHud();
   const e=$('#trayEmpty'); if(e) trayList.appendChild(e);
 }
-function trySnap(p){
-  const thr=Math.min(pw,ph)*.35;
-  if(Math.hypot(p.x-p.tx,p.y-p.ty)>thr) return;
-  p.state='locked'; p.x=p.tx; p.y=p.ty; const el=p.el;
-  el.style.left=p.tx+'px'; el.style.top=p.ty+'px'; el.style.zIndex=1;
-  el.classList.add('locked','flash'); setTimeout(()=>el.classList.remove('flash'),260);
-  placed++; updateHud();
+/* guarda na bandeja só as peças soltas (grupos e peças já no lugar ficam) */
+function tidy(){
+  const loose=pieces.filter(p=>p.state==='world' && p.g.pieces.length===1);
+  loose.forEach(returnToTray);
+  toast(loose.length ? `${loose.length} ${loose.length===1?'peça guardada':'peças guardadas'} na bandeja.` : 'Não há peças soltas isoladas no quadro.', 2200);
+}
+$('#btnTidy').onclick=()=>{ if(W) tidy(); };
+
+/* ---------- grupos (peças aglutinadas) ---------- */
+function moveGroup(g,dx,dy){ for(const q of g.pieces){ q.x+=dx; q.y+=dy; q.el.style.left=q.x+'px'; q.el.style.top=q.y+'px'; } }
+function mergeGroups(a,b){
+  const z=Math.max(...a.pieces.map(q=>q.z),...b.pieces.map(q=>q.z));
+  for(const q of b.pieces){ q.g=a; a.pieces.push(q); }
+  a.locked=a.locked||b.locked;
+  for(const q of a.pieces){ q.z=z; if(q.state!=='locked') q.el.style.zIndex=z; }
+  return a;
+}
+function lockGroup(g){
+  g.locked=true;
+  for(const q of g.pieces){
+    const was=q.state==='locked';
+    q.state='locked'; q.x=q.tx; q.y=q.ty; const el=q.el;
+    el.style.left=q.tx+'px'; el.style.top=q.ty+'px'; el.style.zIndex=1;
+    if(!was){ placed++; el.classList.add('locked','flash'); setTimeout(()=>el.classList.remove('flash'),260); }
+  }
+  updateHud();
   if(placed===pieces.length) complete();
 }
+function snapGroup(g){
+  if(g.locked || g.pieces.some(q=>q.rot!==0)) return;
+  const thr=Math.min(pw,ph)*.35;
+  // 1) encaixe na posição certa do quadro
+  let best=null;
+  for(const q of g.pieces){ const d=Math.hypot(q.x-q.tx,q.y-q.ty); if(d<=thr && (!best||d<best.d)) best={q,d}; }
+  if(best){ moveGroup(g,best.q.tx-best.q.x,best.q.ty-best.q.y); lockGroup(g); return; }
+  // 2) junção com peças vizinhas, em qualquer lugar da mesa
+  for(;;){
+    let found=null;
+    outer: for(const q of g.pieces){
+      for(const [dr,dc] of DIRS){
+        const n=pieceAt(q.r+dr,q.c+dc);
+        if(!n || n.g===g || n.state==='tray' || n.rot!==0) continue;
+        const ex=(n.x-n.tx)-(q.x-q.tx), ey=(n.y-n.ty)-(q.y-q.ty);
+        if(Math.hypot(ex,ey)<=thr){ found={n,ex,ey}; break outer; }
+      }
+    }
+    if(!found) break;
+    moveGroup(g,found.ex,found.ey);
+    g=mergeGroups(g,found.n.g);
+    g.pieces.forEach(q=>{ if(q.state!=='locked'){ q.el.classList.add('flash'); setTimeout(()=>q.el.classList.remove('flash'),260);} });
+    if(g.locked){ lockGroup(g); break; }
+  }
+}
+
 function complete(){
   completed=true; stopTimer();
   const secs=Math.floor((Date.now()-t0)/1000);
   world.classList.add('complete');
-  $('#doneStats').textContent=`${pieces.length} peças em ${fmt(secs)}.`;
+  $('#doneStats').textContent=`${pieces.length} peças`+(prefs.showTime?` em ${fmt(secs)}`:'')+'.';
   const dc=$('#doneCredit'); dc.textContent='';
   const info=current&&current.info;
-  if(info&&info.kind==='commons'){ dc.append('Imagem: '); const a=document.createElement('a'); a.href=info.page; a.target='_blank'; a.rel='noopener'; a.textContent=`${info.title}${info.credit?' — '+info.credit:''}`; dc.append(a); }
+  if(info&&info.page){ dc.append('Imagem: '); const a=document.createElement('a'); a.href=info.page; a.target='_blank'; a.rel='noopener'; a.textContent=`${info.title}${info.credit?' — '+info.credit:''}`; dc.append(a); }
   setTimeout(()=>{ if(completed) $('#done').hidden=false; },1100);
 }
 $('#doneClose').onclick=()=>$('#done').hidden=true;
@@ -566,17 +660,26 @@ stage.addEventListener('wheel', e => {
 },{passive:false});
 document.addEventListener('gesturestart', e=>e.preventDefault());
 
+/* ponto do mundo -> coordenadas locais da peça (considera a rotação) */
+function localPt(p,wx,wy){
+  let lx=wx-p.x, ly=wy-p.y;
+  if(p.rot){
+    const cx=cw/2, cy=ch/2, dx=lx-cx, dy=ly-cy, a=-p.rot*Math.PI/180, co=Math.cos(a), si=Math.sin(a);
+    lx=cx+dx*co-dy*si; ly=cy+dx*si+dy*co;
+  }
+  return [lx,ly];
+}
 function hitTest(wx,wy,touch){
   let best=null;
   for(const p of pieces){
     if(p.state!=='world') continue;
-    const lx=wx-p.x, ly=wy-p.y; if(lx<0||ly<0||lx>cw||ly>ch) continue;
+    const [lx,ly]=localPt(p,wx,wy); if(lx<0||ly<0||lx>cw||ly>ch) continue;
     if(hitCtx.isPointInPath(p.path,lx,ly) && (!best||p.z>best.z)) best=p;
   }
   if(!best && touch){
     for(const p of pieces){
       if(p.state!=='world') continue;
-      const lx=wx-p.x, ly=wy-p.y;
+      const [lx,ly]=localPt(p,wx,wy);
       if(lx>=m&&lx<=m+pw&&ly>=m&&ly<=m+ph&&(!best||p.z>best.z)) best=p;
     }
   }
@@ -586,6 +689,15 @@ const zoomCenter = f => { const r=stage.getBoundingClientRect(); zoomAt(r.left+r
 $('#btnZoomIn').onclick=()=>W&&zoomCenter(1.3);
 $('#btnZoomOut').onclick=()=>W&&zoomCenter(1/1.3);
 $('#btnFit').onclick=()=>W&&fitView();
+function applyTimeVis(){ $('#hudTime').hidden=!prefs.showTime; $('#btnTime').classList.toggle('on',!!prefs.showTime); }
+$('#btnTime').onclick=()=>{ prefs.showTime=!prefs.showTime; applyTimeVis(); savePrefs(); };
+function applyTheme(){
+  const light=prefs.theme==='light';
+  root.classList.toggle('light',light);
+  const mt=document.querySelector('meta[name=theme-color]'); if(mt) mt.content=light?'#e9e9ec':'#2a2a2d';
+}
+const toggleTheme=()=>{ prefs.theme=prefs.theme==='light'?'dark':'light'; applyTheme(); savePrefs(); };
+$('#btnTheme').onclick=toggleTheme; $('#btnThemeMenu').onclick=toggleTheme;
 $('#btnGuide').onclick=()=>{ prefs.guide=!prefs.guide; document.body.classList.toggle('guide',prefs.guide); $('#btnGuide').classList.toggle('on',prefs.guide); savePrefs(); };
 
 /* ================= menu / galeria ================= */
@@ -610,39 +722,24 @@ let selection=null;
 const countEl=$('#count');
 countEl.value=prefs.countIdx;
 function updateCountLabel(){
-  const n=COUNTS[prefs.countIdx], a=selection?selection.w/selection.h:4/3, g=pickGrid(n,a);
+  const n=COUNTS[prefs.countIdx], a=(selection&&selection.w&&selection.h)?selection.w/selection.h:4/3, g=pickGrid(n,a);
   $('#countLabel').textContent=`≈ ${g.cnt} peças (${g.c}×${g.r})`;
 }
 countEl.oninput=()=>{ prefs.countIdx=+countEl.value; updateCountLabel(); savePrefs(); };
 
-/* --- Wikimedia Commons --- */
-const API='https://commons.wikimedia.org/w/api.php';
-async function commons(params){
-  const u=new URL(API);
-  Object.entries({action:'query',format:'json',origin:'*',formatversion:'2',...params}).forEach(([k,v])=>u.searchParams.set(k,v));
-  const r=await fetch(u); if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
-}
+/* ================= bancos de imagens ================= */
+const getJSON = async url => { const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); };
+const withParams = (base,params) => { const u=new URL(base); Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v)); return u; };
 const stripHtml = s => { if(!s) return ''; const d=new DOMParser().parseFromString(s,'text/html'); return (d.body.textContent||'').trim(); };
-const PT = {paisagem:'landscape',paisagens:'landscape',montanha:'mountain',montanhas:'mountain',mar:'sea',oceano:'ocean',praia:'beach',flor:'flower',flores:'flowers',
-  animal:'animal',animais:'animal',passaro:'bird',passaros:'bird',ave:'bird',aves:'bird',cidade:'city',cidades:'city',floresta:'forest',jardim:'garden',cachoeira:'waterfall',
-  lago:'lake',ponte:'bridge',castelo:'castle',gato:'cat',gatos:'cat',cachorro:'dog',cao:'dog',borboleta:'butterfly',ceu:'sky',neve:'snow',rio:'river',ilha:'island',
-  igreja:'church',barco:'boat',deserto:'desert',outono:'autumn',inverno:'winter',cavalo:'horse',noite:'night',nuvens:'clouds',arvore:'tree',arvores:'trees',
-  arquitetura:'architecture',sol:'sun',lua:'moon',estrelas:'stars',fruta:'fruit',frutas:'fruit',comida:'food',cavalos:'horse',peixe:'fish',inseto:'insect'};
-function translate(q){
-  const norm=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
-  if(/por do sol/.test(norm)) return norm.replace(/por do sol/g,'sunset');
-  return norm.split(/\s+/).map(w=>PT[w]!==undefined?PT[w]:w).filter(Boolean).join(' ');
-}
-const CHIPS=[['Paisagens','landscape'],['Montanhas','mountain'],['Mar','sea'],['Flores','flower'],['Animais','animal'],['Pássaros','bird'],['Cidades','city'],
-  ['Arquitetura','architecture'],['Pôr do sol','sunset'],['Floresta','forest'],['Jardim','garden'],['Gatos','cat']];
-const RANDOM_TERMS=['landscape','mountain','lake','forest','flower','bird','butterfly','city','architecture','sunset','beach','waterfall','animal','garden','bridge',
-  'castle','island','river','autumn','snow','cat','horse','sky','desert','harbour','village','insect','tree','coast','valley'];
-const SAFE='-nude -naked -topless -erotic -sex';
-const G={term:'',offset:0,next:null,items:[],loading:false,seq:0};
+const loadImage = url => new Promise((res,rej)=>{ const i=new Image(); i.referrerPolicy='no-referrer'; i.onload=()=>res(i); i.onerror=()=>rej(new Error('img')); i.src=url; });
+const PAGE = 24;
 
-async function searchCommons(term, offset, featured=true){
+/* --- Wikimedia Commons --- */
+const commonsQuery = params => getJSON(withParams('https://commons.wikimedia.org/w/api.php',{action:'query',format:'json',origin:'*',formatversion:'2',...params}));
+const SAFE='-nude -naked -topless -erotic -sex';
+async function searchCommons(term, offset, featured){
   const q=`${term} filetype:bitmap ${SAFE}`+(featured?' incategory:"Featured pictures on Wikimedia Commons"':'');
-  const d=await commons({generator:'search',gsrnamespace:6,gsrsearch:q,gsrlimit:24,gsroffset:offset,prop:'imageinfo',
+  const d=await commonsQuery({generator:'search',gsrnamespace:6,gsrsearch:q,gsrlimit:PAGE,gsroffset:offset,prop:'imageinfo',
     iiprop:'url|size|mime|extmetadata',iiurlwidth:500,iiextmetadatafilter:'LicenseShortName|Artist'});
   const pages=(d.query&&d.query.pages)||[];
   pages.sort((a,b)=>(a.index||0)-(b.index||0));
@@ -651,54 +748,169 @@ async function searchCommons(term, offset, featured=true){
     const ii=pg.imageinfo&&pg.imageinfo[0]; if(!ii) continue;
     if(!/^image\/(jpeg|png|webp)$/.test(ii.mime||'')) continue;
     if(ii.width<1000||ii.height<700) continue;
-    const md=ii.extmetadata||{};
-    items.push({kind:'commons',title:pg.title.replace(/^File:/,'').replace(/\.[a-z0-9]+$/i,'').replace(/_/g,' '),fileTitle:pg.title,
+    const md=ii.extmetadata||{}, fileTitle=pg.title;
+    items.push({title:fileTitle.replace(/^File:/,'').replace(/\.[a-z0-9]+$/i,'').replace(/_/g,' '),
       thumb:ii.thumburl||ii.url,w:ii.width,h:ii.height,page:ii.descriptionurl,
-      credit:[stripHtml(md.Artist&&md.Artist.value).slice(0,60),md.LicenseShortName&&md.LicenseShortName.value].filter(Boolean).join(' · ')});
+      credit:[stripHtml(md.Artist&&md.Artist.value).slice(0,60),md.LicenseShortName&&md.LicenseShortName.value].filter(Boolean).join(' · '),
+      candidates:async()=>{ const r=await commonsQuery({titles:fileTitle,prop:'imageinfo',iiprop:'url|size',iiurlwidth:1920}); const x=r.query.pages[0].imageinfo[0]; return [x.thumburl||x.url]; }});
   }
   return {items,next:d.continue&&d.continue.gsroffset!=null?d.continue.gsroffset:null};
 }
+async function commonsSearch(term,cursor,featured){
+  const offset=cursor||0;
+  let res=await searchCommons(term,offset,featured);
+  if(featured && offset===0 && res.items.length<4){ const r2=await searchCommons(term,0,false); res={items:[...res.items,...r2.items],next:r2.next}; }
+  return res;
+}
+
+/* --- Art Institute of Chicago (domínio público) --- */
+async function aicSearch(term,cursor){
+  const page=cursor||1;
+  const u=withParams('https://api.artic.edu/api/v1/artworks/search',{q:term,limit:PAGE,page,fields:'id,title,artist_title,image_id,thumbnail,date_display'});
+  u.searchParams.set('query[term][is_public_domain]','true');
+  const d=await getJSON(u);
+  const iiif=(d.config&&d.config.iiif_url)||'https://www.artic.edu/iiif/2';
+  const items=(d.data||[]).filter(a=>a.image_id).map(a=>({
+    title:a.title||'Sem título', thumb:`${iiif}/${a.image_id}/full/400,/0/default.jpg`,
+    w:(a.thumbnail&&a.thumbnail.width)||0, h:(a.thumbnail&&a.thumbnail.height)||0,
+    page:`https://www.artic.edu/artworks/${a.id}`, credit:[a.artist_title,'domínio público'].filter(Boolean).join(' · '),
+    candidates:async()=>[`${iiif}/${a.image_id}/full/1686,/0/default.jpg`,`${iiif}/${a.image_id}/full/843,/0/default.jpg`]}));
+  const tp=d.pagination&&d.pagination.total_pages;
+  return {items,next:tp&&page<tp?page+1:null};
+}
+
+/* --- Cleveland Museum of Art (CC0) --- */
+async function clevelandSearch(term,cursor){
+  const skip=cursor||0;
+  const d=await getJSON(withParams('https://openaccess-api.clevelandart.org/api/artworks/',{q:term,has_image:1,cc0:1,limit:PAGE,skip}));
+  const items=(d.data||[]).filter(a=>a.images&&a.images.web&&a.images.web.url).map(a=>{
+    const web=a.images.web;
+    return {title:a.title||'Sem título',thumb:web.url,w:+web.width||0,h:+web.height||0,page:a.url,
+      credit:[((a.creators&&a.creators[0]&&a.creators[0].description)||'').split('(')[0].trim(),'CC0'].filter(Boolean).join(' · '),
+      candidates:async()=>[web.url]};
+  });
+  const total=d.info&&d.info.total;
+  return {items,next:total&&skip+PAGE<total?skip+PAGE:null};
+}
+
+/* --- The Metropolitan Museum of Art (domínio público) --- */
+const metCache={term:null,ids:[]};
+async function metSearch(term,cursor){
+  const off=cursor||0;
+  if(metCache.term!==term){
+    const d=await getJSON(withParams('https://collectionapi.metmuseum.org/public/collection/v1/search',{q:term,hasImages:'true',isPublicDomain:'true'}));
+    metCache.term=term; metCache.ids=d.objectIDs||[];
+  }
+  const ids=metCache.ids.slice(off,off+PAGE);
+  const objs=await Promise.allSettled(ids.map(id=>getJSON(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`)));
+  const items=objs.filter(o=>o.status==='fulfilled'&&o.value.primaryImageSmall).map(o=>{
+    const a=o.value;
+    return {title:a.title||'Sem título',thumb:a.primaryImageSmall,w:0,h:0,page:a.objectURL,
+      credit:[a.artistDisplayName,'domínio público'].filter(Boolean).join(' · '),
+      candidates:async()=>(smallScreen()||!a.primaryImage)?[a.primaryImageSmall]:[a.primaryImage,a.primaryImageSmall]};
+  });
+  return {items,next:off+PAGE<metCache.ids.length?off+PAGE:null};
+}
+const smallScreen=()=>innerWidth<900;
+
+/* --- Openverse (várias coleções, licenças Creative Commons / domínio público) --- */
+const openverse = category => async (term,cursor) => {
+  const page=cursor||1;
+  const d=await getJSON(withParams('https://api.openverse.org/v1/images/',{q:term,page,page_size:PAGE,mature:'false',category}));
+  const items=(d.results||[]).filter(r=>r.url&&(!r.width||r.width>=700)).map(r=>({
+    title:r.title||'Sem título',thumb:r.thumbnail||r.url,w:r.width||0,h:r.height||0,page:r.foreign_landing_url||r.url,
+    credit:[r.creator,((r.license||'')+' '+(r.license_version||'')).toUpperCase().trim()].filter(Boolean).join(' · '),
+    candidates:async()=>[r.url,r.thumbnail].filter(Boolean)}));
+  return {items,next:d.page_count&&page<d.page_count?page+1:null};
+};
+
+const PROVIDERS={
+  'commons-featured':{label:'Wikimedia Commons · fotos em destaque',note:'Fotos em destaque do Wikimedia Commons, todas com licença livre.',
+    search:(t,c)=>commonsSearch(t,c,true),rand:()=>Math.floor(Math.random()*80)},
+  'commons-all':{label:'Wikimedia Commons · tudo (desenhos, mapas, plantas, gravuras…)',note:'Todo o acervo raster do Wikimedia Commons: inclui desenhos, mapas, plantas técnicas, gravuras e digitalizações. Licenças livres; a qualidade varia.',
+    search:(t,c)=>commonsSearch(t,c,false),rand:()=>Math.floor(Math.random()*60)},
+  'aic':{label:'Art Institute of Chicago · pinturas e arte',note:'Obras em domínio público do Art Institute of Chicago.',art:true,
+    search:aicSearch,rand:()=>1+Math.floor(Math.random()*8)},
+  'cleveland':{label:'Cleveland Museum of Art · arte (CC0)',note:'Obras do Cleveland Museum of Art liberadas em CC0.',art:true,
+    search:clevelandSearch,rand:()=>PAGE*Math.floor(Math.random()*6)},
+  'met':{label:'The Met · arte, gravuras e desenhos',note:'Obras em domínio público do Metropolitan Museum of Art (pinturas, gravuras, desenhos, objetos).',art:true,
+    search:metSearch,rand:()=>PAGE*Math.floor(Math.random()*4)},
+  'openverse-photo':{label:'Openverse · fotografias',note:'Openverse reúne fotos com licenças Creative Commons e domínio público de várias coleções. Confira o crédito ao usar a imagem.',
+    search:openverse('photograph'),rand:()=>1+Math.floor(Math.random()*6)},
+  'openverse-art':{label:'Openverse · ilustrações e obras digitalizadas',note:'Ilustrações, desenhos e obras digitalizadas com licenças Creative Commons ou domínio público.',art:true,
+    search:openverse('illustration,digitized_artwork'),rand:()=>1+Math.floor(Math.random()*6)}
+};
+if(!PROVIDERS[prefs.source]) prefs.source='commons-featured';
+const prov = () => PROVIDERS[prefs.source];
+
+const PT = {paisagem:'landscape',paisagens:'landscape',montanha:'mountain',montanhas:'mountain',mar:'sea',oceano:'ocean',praia:'beach',flor:'flower',flores:'flowers',
+  animal:'animal',animais:'animal',passaro:'bird',passaros:'bird',ave:'bird',aves:'bird',cidade:'city',cidades:'city',floresta:'forest',jardim:'garden',cachoeira:'waterfall',
+  lago:'lake',ponte:'bridge',castelo:'castle',gato:'cat',gatos:'cat',cachorro:'dog',cao:'dog',borboleta:'butterfly',ceu:'sky',neve:'snow',rio:'river',ilha:'island',
+  igreja:'church',barco:'boat',navio:'ship',deserto:'desert',outono:'autumn',inverno:'winter',cavalo:'horse',noite:'night',nuvens:'clouds',arvore:'tree',arvores:'trees',
+  arquitetura:'architecture',sol:'sun',lua:'moon',estrelas:'stars',fruta:'fruit',frutas:'fruit',comida:'food',peixe:'fish',inseto:'insect',
+  pintura:'painting',pinturas:'painting',desenho:'drawing',desenhos:'drawing',mapa:'map',mapas:'map',retrato:'portrait',gravura:'engraving',ilustracao:'illustration',
+  violino:'violin',violao:'guitar',instrumento:'musical instrument',instrumentos:'musical instruments',musicais:'',musical:'',mulher:'woman',homem:'man',crianca:'child',
+  projeto:'blueprint',planta:'plant',botanica:'botanical',botanico:'botanical'};
+function translate(q){
+  const norm=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  if(/por do sol/.test(norm)) return norm.replace(/por do sol/g,'sunset');
+  return norm.split(/\s+/).map(w=>PT[w]!==undefined?PT[w]:w).filter(Boolean).join(' ');
+}
+const CHIPS=[['Paisagens','landscape'],['Montanhas','mountain'],['Mar','sea'],['Flores','flower'],['Animais','animal'],['Pássaros','bird'],['Cidades','city'],
+  ['Arquitetura','architecture'],['Pôr do sol','sunset'],['Floresta','forest'],['Jardim','garden'],['Gatos','cat'],
+  ['Pinturas','painting'],['Desenhos','drawing'],['Retratos','portrait'],['Mapas','map'],['Gravuras','engraving'],['Instrumentos musicais','musical instrument'],
+  ['Plantas técnicas','technical drawing'],['Ilustração botânica','botanical illustration']];
+const RANDOM_TERMS=['landscape','mountain','lake','forest','flower','bird','butterfly','city','architecture','sunset','beach','waterfall','animal','garden','bridge',
+  'castle','island','river','autumn','snow','cat','horse','sky','desert','harbour','village','insect','tree','coast','valley','map','drawing','musical instrument'];
+const ART_TERMS=['painting','portrait','landscape','still life','flowers','ship','horse','garden','musical instrument','map','drawing','cat','mountain','city','sea','bird','botanical illustration','engraving'];
+const G={term:'',cursor:undefined,items:[],loading:false,seq:0};
+
 async function loadGallery(term,reset){
-  if(G.loading) return; G.loading=true; const my=++G.seq;
-  if(reset){ G.term=term; G.offset=0; G.items=[]; $('#grid').textContent=''; }
+  if(G.loading && !reset) return;
+  const my=++G.seq; G.loading=true;
+  if(reset){ G.term=term; G.cursor=undefined; G.items=[]; $('#grid').textContent=''; }
   $('#gstatus').textContent='Carregando…'; $('#btnMore').hidden=true;
   try{
-    let res=await searchCommons(G.term,G.offset,true);
-    if(reset && res.items.length<4){ const r2=await searchCommons(G.term,0,false); res={items:[...res.items,...r2.items],next:r2.next}; }
-    if(my!==G.seq) return;
-    G.next=res.next; G.items.push(...res.items); G.offset=res.next;
-    renderGrid(res.items);
-    $('#gstatus').textContent=G.items.length?'':'Nenhuma imagem encontrada. Tente outro termo (em inglês costuma funcionar melhor).';
+    let res, tries=0;
+    do{ res=await prov().search(G.term,G.cursor); if(my!==G.seq) return; G.cursor=res.next; tries++; }
+    while(!res.items.length && res.next!=null && tries<4);
+    G.items.push(...res.items); renderGrid(res.items);
+    $('#gstatus').textContent=G.items.length?'':'Nenhuma imagem encontrada. Tente outro termo (em inglês costuma funcionar melhor) ou outro banco de imagens.';
     $('#btnMore').hidden=res.next==null||!res.items.length;
   }catch(err){
-    $('#gstatus').textContent='Não foi possível carregar a galeria. Verifique a conexão — você ainda pode enviar a sua própria imagem.';
-  }finally{ G.loading=false; }
+    if(my!==G.seq) return;
+    $('#gstatus').textContent='Não foi possível carregar esse banco agora. Tente outro banco de imagens, verifique a conexão ou envie a sua própria imagem.';
+  }finally{ if(my===G.seq) G.loading=false; }
 }
 function renderGrid(items){
   const grid=$('#grid');
   for(const it of items){
     const b=document.createElement('button'); b.className='th'; b.title=it.title; b.type='button';
-    const im=document.createElement('img'); im.loading='lazy'; im.alt=it.title; im.src=it.thumb; b.appendChild(im);
-    b.onclick=()=>selectItem(it,b); it._btn=b; grid.appendChild(b);
+    const im=document.createElement('img'); im.loading='lazy'; im.referrerPolicy='no-referrer'; im.alt=it.title; im.src=it.thumb; b.appendChild(im);
+    b.onclick=()=>selectItem(it,b); grid.appendChild(b);
   }
 }
 function setSelection(sel){
   selection=sel;
   $('#selThumb').src=sel.thumb; $('#selTitle').textContent=sel.title;
   const c=$('#selCredit'); c.textContent='';
-  if(sel.kind==='commons'){ const a=document.createElement('a'); a.href=sel.page; a.target='_blank'; a.rel='noopener'; a.textContent=sel.credit||'Wikimedia Commons'; c.appendChild(a); }
+  if(sel.page){ const a=document.createElement('a'); a.href=sel.page; a.target='_blank'; a.rel='noopener'; a.textContent=sel.credit||'Ver origem'; c.appendChild(a); }
   else c.textContent='Sua imagem';
   $('#btnStart').disabled=false; updateCountLabel();
 }
 function selectItem(it,btn){
   document.querySelectorAll('.th.sel').forEach(x=>x.classList.remove('sel')); if(btn) btn.classList.add('sel');
   setSelection({...it,getImage:async()=>{
-    const d=await commons({titles:it.fileTitle,prop:'imageinfo',iiprop:'url|size',iiurlwidth:1920});
-    const ii=d.query.pages[0].imageinfo[0];
-    return loadImage(ii.thumburl||ii.url);
+    const urls=await it.candidates();
+    for(const u of urls){ try{ return await loadImage(u); }catch{} }
+    throw new Error('sem imagem');
   }});
 }
-const loadImage = url => new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('img')); i.src=url; });
+
+const srcSel=$('#source');
+Object.entries(PROVIDERS).forEach(([id,pr])=>{ const o=document.createElement('option'); o.value=id; o.textContent=pr.label; srcSel.appendChild(o); });
+srcSel.value=prefs.source; $('#srcNote').textContent=prov().note;
+srcSel.onchange=()=>{ prefs.source=srcSel.value; savePrefs(); $('#srcNote').textContent=prov().note; loadGallery(G.term||prefs.query||'landscape',true); };
 
 $('#btnMore').onclick=()=>loadGallery(G.term,false);
 $('#searchForm').onsubmit=e=>{ e.preventDefault(); const q=$('#q').value.trim(); if(!q) return; markChip(null); prefs.query=translate(q); prefs.label=q; savePrefs(); loadGallery(prefs.query,true); };
@@ -711,19 +923,18 @@ CHIPS.forEach(([label,term])=>{
 $('#btnRandom').onclick=async()=>{
   const btn=$('#btnRandom'); btn.disabled=true; const old=btn.textContent; btn.textContent='Sorteando…';
   try{
+    const pr=prov(), terms=pr.art?ART_TERMS:RANDOM_TERMS;
     for(let tries=0;tries<3;tries++){
-      const term=RANDOM_TERMS[Math.floor(Math.random()*RANDOM_TERMS.length)];
-      let res=await searchCommons(term,Math.floor(Math.random()*(tries?10:80)),true);
-      if(!res.items.length) res=await searchCommons(term,0,true);
+      const term=terms[Math.floor(Math.random()*terms.length)];
+      const res=await pr.search(term,tries?undefined:pr.rand());
       if(res.items.length){
         const it=res.items[Math.floor(Math.random()*res.items.length)];
         selectItem(it,null);
-        document.querySelectorAll('.th.sel').forEach(x=>x.classList.remove('sel'));
         toast(`Sorteada: ${it.title}`,2500); return;
       }
     }
-    toast('Não consegui sortear agora. Tente de novo.');
-  }catch{ toast('Sem conexão com a galeria. Você pode enviar sua própria imagem.'); }
+    toast('Não consegui sortear agora. Tente de novo ou troque o banco de imagens.');
+  }catch{ toast('Sem conexão com esse banco. Tente outro ou envie sua própria imagem.'); }
   finally{ btn.disabled=false; btn.textContent=old; }
 };
 
@@ -770,6 +981,9 @@ if('serviceWorker' in navigator && location.protocol!=='file:') addEventListener
 
 /* ================= início ================= */
 applyLayout();
+applyTheme(); applyTimeVis();
+$('#optRotate').checked=!!prefs.rotate;
+$('#optRotate').onchange=e=>{ prefs.rotate=e.target.checked; savePrefs(); };
 updateCountLabel();
 showMenu();
 $('#q').value='';
