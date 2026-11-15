@@ -156,7 +156,9 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
 #doneCredit{font-size:12px}
 #doneCredit a{color:var(--muted)}
 .wp,.tp{transition:transform .15s}
-#source{width:100%;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--text);padding:0 10px;font-size:15px;margin-bottom:8px}
+#source{flex:1;min-width:0;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--text);padding:0 10px;font-size:15px}
+.srcrow{display:flex;gap:8px;margin-bottom:8px}
+#diag{font-size:13px;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:10px;line-height:1.6}
 .opt{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:6px;cursor:pointer}
 .opt input{width:18px;height:18px;accent-color:var(--accent)}
 @media (max-width:520px){ #menu header{padding:10px 12px} #menuScroll{padding:12px} #menuFoot{padding-left:12px;padding-right:12px} }
@@ -215,11 +217,13 @@ body.portrait #tray{width:auto;height:var(--trayH);border-left:0;border-top:1px 
       <button data-tab="upload">Enviar imagem</button>
     </div>
     <section id="tabGallery">
-      <select id="source" aria-label="Banco de imagens"></select>
+      <div class="srcrow"><select id="source" aria-label="Banco de imagens"></select><button class="btn" type="button" id="btnDiag" title="Testa a conexão com cada galeria">Testar galerias</button></div>
+      <div id="diag" hidden></div>
       <form id="searchForm">
         <input id="q" type="search" placeholder="Buscar imagens (ex.: montanha, flores, gato)" autocomplete="off" enterkeyhint="search">
         <button class="btn" type="submit">Buscar</button>
-        <button class="btn" type="button" id="btnRandom">🎲 Aleatória</button>
+        <button class="btn" type="button" id="btnRandom" title="Sorteia uma imagem dentro da galeria e da busca escolhidas">🎲 Aleatória</button>
+        <button class="btn" type="button" id="btnRandomAll" title="Sorteia de qualquer galeria e qualquer tema">🎲 Surpresa total</button>
       </form>
       <div id="chips"></div>
       <div id="grid"></div>
@@ -276,7 +280,7 @@ const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 /* ================= preferências (por navegador) ================= */
 const LS_KEY = 'quebra-cabeca.prefs.v1';
 const COUNTS = [12,24,35,48,63,80,100,150,200,300,400,500,750,1000];
-const defaults = {countIdx:3, trayW:0, trayH:0, cellP:0, guide:false, query:'landscape', label:'Paisagens', rotate:false, showTime:false, theme:'dark', source:'commons-featured'};
+const defaults = {countIdx:3, trayW:0, trayH:0, cellP:0, guide:false, query:'', label:'', rotate:false, showTime:false, theme:'dark', source:'commons-featured'};
 let prefs = (() => { try { return {...defaults, ...JSON.parse(localStorage.getItem(LS_KEY)||'{}')}; } catch { return {...defaults}; } })();
 const savePrefs = () => { try { localStorage.setItem(LS_KEY, JSON.stringify(prefs)); } catch {} };
 
@@ -728,11 +732,30 @@ function updateCountLabel(){
 countEl.oninput=()=>{ prefs.countIdx=+countEl.value; updateCountLabel(); savePrefs(); };
 
 /* ================= bancos de imagens ================= */
-const getJSON = async url => { const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); };
+async function getJSON(url){
+  let lastErr;
+  for(let i=0;i<2;i++){
+    const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),15000);
+    try{
+      const r=await fetch(url,{signal:ctl.signal}); clearTimeout(to);
+      if(r.ok) return await r.json();
+      lastErr=new Error('HTTP '+r.status);
+      if(r.status<500 && r.status!==429) throw lastErr;       // erro do pedido: não adianta repetir
+    }catch(e){
+      clearTimeout(to);
+      lastErr = e.name==='AbortError' ? new Error('tempo esgotado') : (e.message==='Failed to fetch'||e.name==='TypeError' ? new Error('sem resposta (rede ou bloqueio do servidor)') : e);
+      if(/^HTTP 4/.test(lastErr.message) && !/429/.test(lastErr.message)) throw lastErr;
+    }
+    await new Promise(r=>setTimeout(r,600));
+  }
+  throw lastErr;
+}
 const withParams = (base,params) => { const u=new URL(base); Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v)); return u; };
 const stripHtml = s => { if(!s) return ''; const d=new DOMParser().parseFromString(s,'text/html'); return (d.body.textContent||'').trim(); };
 const loadImage = url => new Promise((res,rej)=>{ const i=new Image(); i.referrerPolicy='no-referrer'; i.onload=()=>res(i); i.onerror=()=>rej(new Error('img')); i.src=url; });
-const PAGE = 24;
+const PAGE = 24, PAGE_OV = 20;      // Openverse anônimo aceita no máximo 20 por página
+const smallScreen=()=>innerWidth<900;
+const httpsU = u => (u||'').replace(/^http:/,'https:').replace(/ /g,'%20');
 
 /* --- Wikimedia Commons --- */
 const commonsQuery = params => getJSON(withParams('https://commons.wikimedia.org/w/api.php',{action:'query',format:'json',origin:'*',formatversion:'2',...params}));
@@ -783,11 +806,11 @@ async function aicSearch(term,cursor){
 async function clevelandSearch(term,cursor){
   const skip=cursor||0;
   const d=await getJSON(withParams('https://openaccess-api.clevelandart.org/api/artworks/',{q:term,has_image:1,cc0:1,limit:PAGE,skip}));
-  const items=(d.data||[]).filter(a=>a.images&&a.images.web&&a.images.web.url).map(a=>{
+  const items=(d.data||[]).filter(a=>a.images&&a.images.web&&a.images.web.url&&(!a.share_license_status||/cc0/i.test(a.share_license_status))).map(a=>{
     const web=a.images.web;
-    return {title:a.title||'Sem título',thumb:web.url,w:+web.width||0,h:+web.height||0,page:a.url,
+    return {title:a.title||'Sem título',thumb:httpsU(web.url),w:+web.width||0,h:+web.height||0,page:a.url,
       credit:[((a.creators&&a.creators[0]&&a.creators[0].description)||'').split('(')[0].trim(),'CC0'].filter(Boolean).join(' · '),
-      candidates:async()=>[web.url]};
+      candidates:async()=>[httpsU(web.url)]};
   });
   const total=d.info&&d.info.total;
   return {items,next:total&&skip+PAGE<total?skip+PAGE:null};
@@ -809,14 +832,14 @@ async function metSearch(term,cursor){
       credit:[a.artistDisplayName,'domínio público'].filter(Boolean).join(' · '),
       candidates:async()=>(smallScreen()||!a.primaryImage)?[a.primaryImageSmall]:[a.primaryImage,a.primaryImageSmall]};
   });
+  if(!items.length && objs.length && objs.every(o=>o.status==='rejected')) throw objs[0].reason;
   return {items,next:off+PAGE<metCache.ids.length?off+PAGE:null};
 }
-const smallScreen=()=>innerWidth<900;
 
 /* --- Openverse (várias coleções, licenças Creative Commons / domínio público) --- */
 const openverse = category => async (term,cursor) => {
   const page=cursor||1;
-  const d=await getJSON(withParams('https://api.openverse.org/v1/images/',{q:term,page,page_size:PAGE,mature:'false',category}));
+  const d=await getJSON(withParams('https://api.openverse.org/v1/images/',{q:term,page,page_size:PAGE_OV,mature:'false',category}));
   const items=(d.results||[]).filter(r=>r.url&&(!r.width||r.width>=700)).map(r=>({
     title:r.title||'Sem título',thumb:r.thumbnail||r.url,w:r.width||0,h:r.height||0,page:r.foreign_landing_url||r.url,
     credit:[r.creator,((r.license||'')+' '+(r.license_version||'')).toUpperCase().trim()].filter(Boolean).join(' · '),
@@ -824,22 +847,115 @@ const openverse = category => async (term,cursor) => {
   return {items,next:d.page_count&&page<d.page_count?page+1:null};
 };
 
-const PROVIDERS={
-  'commons-featured':{label:'Wikimedia Commons · fotos em destaque',note:'Fotos em destaque do Wikimedia Commons, todas com licença livre.',
-    search:(t,c)=>commonsSearch(t,c,true),rand:()=>Math.floor(Math.random()*80)},
-  'commons-all':{label:'Wikimedia Commons · tudo (desenhos, mapas, plantas, gravuras…)',note:'Todo o acervo raster do Wikimedia Commons: inclui desenhos, mapas, plantas técnicas, gravuras e digitalizações. Licenças livres; a qualidade varia.',
-    search:(t,c)=>commonsSearch(t,c,false),rand:()=>Math.floor(Math.random()*60)},
-  'aic':{label:'Art Institute of Chicago · pinturas e arte',note:'Obras em domínio público do Art Institute of Chicago.',art:true,
-    search:aicSearch,rand:()=>1+Math.floor(Math.random()*8)},
-  'cleveland':{label:'Cleveland Museum of Art · arte (CC0)',note:'Obras do Cleveland Museum of Art liberadas em CC0.',art:true,
-    search:clevelandSearch,rand:()=>PAGE*Math.floor(Math.random()*6)},
-  'met':{label:'The Met · arte, gravuras e desenhos',note:'Obras em domínio público do Metropolitan Museum of Art (pinturas, gravuras, desenhos, objetos).',art:true,
-    search:metSearch,rand:()=>PAGE*Math.floor(Math.random()*4)},
-  'openverse-photo':{label:'Openverse · fotografias',note:'Openverse reúne fotos com licenças Creative Commons e domínio público de várias coleções. Confira o crédito ao usar a imagem.',
-    search:openverse('photograph'),rand:()=>1+Math.floor(Math.random()*6)},
-  'openverse-art':{label:'Openverse · ilustrações e obras digitalizadas',note:'Ilustrações, desenhos e obras digitalizadas com licenças Creative Commons ou domínio público.',art:true,
-    search:openverse('illustration,digitized_artwork'),rand:()=>1+Math.floor(Math.random()*6)}
+/* --- NASA Image and Video Library --- */
+async function nasaSearch(term,cursor){
+  const page=cursor||1;
+  const d=await getJSON(withParams('https://images-api.nasa.gov/search',{q:term,media_type:'image',page,page_size:PAGE}));
+  const col=d.collection||{};
+  const items=(col.items||[]).filter(it=>it.data&&it.data[0]&&it.links&&it.links[0]&&it.links[0].href).map(it=>{
+    const mt=it.data[0];
+    return {title:mt.title||'Sem título',thumb:httpsU(it.links[0].href),w:0,h:0,
+      page:`https://images.nasa.gov/details/${encodeURIComponent(mt.nasa_id)}`,
+      credit:[mt.photographer||mt.secondary_creator||'','NASA'].filter(Boolean).join(' · '),
+      candidates:async()=>{
+        const a=await getJSON(`https://images-api.nasa.gov/asset/${encodeURIComponent(mt.nasa_id)}`);
+        const hrefs=((a.collection&&a.collection.items)||[]).map(x=>httpsU(x.href)).filter(h=>/\.(jpe?g|png)$/i.test(h));
+        const pick=k=>hrefs.find(h=>h.includes('~'+k+'.'));
+        return [pick('large'),pick('medium'),pick('orig'),pick('small')].filter(Boolean);
+      }};
+  });
+  const hasNext=(col.links||[]).some(l=>l.rel==='next');
+  return {items,next:hasNext?page+1:null};
+}
+
+/* --- SMK · Museu Nacional da Dinamarca (domínio público) --- */
+async function smkSearch(term,cursor){
+  const off=cursor||0;
+  const u=withParams('https://api.smk.dk/api/v1/art/search/',{keys:term||'*',offset:off,rows:PAGE,lang:'en',
+    fields:'object_number,titles,production,image_thumbnail,image_width,image_height'});
+  u.searchParams.set('filters','[has_image:true],[public_domain:true]');
+  const d=await getJSON(u);
+  const sized=(url,n)=>/\/full\/![0-9]+,/.test(url)?url.replace(/\/full\/![0-9]+,/,`/full/!${n},`):url;
+  const items=(d.items||[]).filter(a=>a.image_thumbnail).map(a=>{
+    const t=httpsU(a.image_thumbnail);
+    return {title:(a.titles&&a.titles[0]&&a.titles[0].title)||'Sem título',thumb:sized(t,400),w:a.image_width||0,h:a.image_height||0,
+      page:`https://open.smk.dk/artwork/image/${a.object_number}`,
+      credit:[(a.production&&a.production[0]&&a.production[0].creator)||'','domínio público'].filter(Boolean).join(' · '),
+      candidates:async()=>[sized(t,1600),sized(t,1024),t]};
+  });
+  return {items,next:d.found&&off+PAGE<d.found?off+PAGE:null};
+}
+
+/* --- Wellcome Collection (ilustrações médicas e botânicas, mapas, gravuras; licenças abertas) --- */
+async function wellcomeSearch(term,cursor){
+  const page=cursor||1;
+  const d=await getJSON(withParams('https://api.wellcomecollection.org/catalogue/v2/images',{query:term,page,pageSize:PAGE}));
+  const items=(d.results||[]).filter(r=>r.thumbnail&&r.thumbnail.url).map(r=>{
+    const base=httpsU(r.thumbnail.url).replace(/\/info\.json$/,'');
+    const ar=r.aspectRatio, lic=(r.thumbnail.license&&r.thumbnail.license.label)||'';
+    return {title:(r.source&&r.source.title)||'Sem título',thumb:`${base}/full/400,/0/default.jpg`,w:ar?Math.round(1000*ar):0,h:ar?1000:0,
+      page:`https://wellcomecollection.org/works/${(r.source&&r.source.id)||''}`,
+      credit:[(r.thumbnail.credit||'').slice(0,60),lic].filter(Boolean).join(' · '),
+      candidates:async()=>[`${base.replace('/thumbs/','/image/')}/full/1600,/0/default.jpg`,`${base}/full/1000,/0/default.jpg`,`${base}/full/640,/0/default.jpg`]};
+  });
+  return {items,next:d.nextPage?page+1:null};
+}
+
+const GEN_TERMS=['landscape','mountain','lake','forest','flower','bird','butterfly','city','architecture','sunset','beach','waterfall','animal','garden','bridge',
+  'castle','island','river','autumn','snow','cat','horse','sky','desert','harbour','village','insect','tree','coast','valley','map','drawing','musical instrument'];
+const ART_TERMS=['painting','portrait','landscape','still life','flowers','ship','horse','garden','musical instrument','map','drawing','cat','mountain','city','sea','bird','botanical illustration','engraving'];
+const SPACE_TERMS=['moon','mars','nebula','galaxy','earth','astronaut','rocket','jupiter','saturn','sun','hubble','aurora','comet','satellite'];
+const MED_TERMS=['botanical','map','anatomy','portrait','garden','bird','flower','insect','landscape','ship','plant','animal'];
+const rc=n=>Math.floor(Math.random()*n);
+
+let PROVIDERS={
+  'commons-featured':{short:'Commons (destaques)',label:'Wikimedia Commons · fotos em destaque',def:'landscape',terms:GEN_TERMS,
+    note:'Fotos em destaque do Wikimedia Commons, todas com licença livre.',search:(t,c)=>commonsSearch(t,c,true),rand:()=>rc(80)},
+  'commons-all':{short:'Commons (tudo)',label:'Wikimedia Commons · tudo (desenhos, mapas, plantas, gravuras…)',def:'landscape',terms:GEN_TERMS,
+    note:'Todo o acervo raster do Wikimedia Commons: inclui desenhos, mapas, plantas técnicas, gravuras e digitalizações. Licenças livres; a qualidade varia.',
+    search:(t,c)=>commonsSearch(t,c,false),rand:()=>rc(60)},
+  'aic':{short:'Art Institute',label:'Art Institute of Chicago · pinturas e arte',def:'painting',terms:ART_TERMS,
+    note:'Obras em domínio público do Art Institute of Chicago.',search:aicSearch,rand:()=>1+rc(8)},
+  'cleveland':{short:'Cleveland',label:'Cleveland Museum of Art · arte (CC0)',def:'painting',terms:ART_TERMS,
+    note:'Obras do Cleveland Museum of Art liberadas em CC0.',search:clevelandSearch,rand:()=>PAGE*rc(6)},
+  'met':{short:'Met',label:'The Met · arte, gravuras e desenhos',def:'painting',terms:ART_TERMS,
+    note:'Obras em domínio público do Metropolitan Museum of Art (pinturas, gravuras, desenhos, objetos).',search:metSearch,rand:()=>PAGE*rc(4)},
+  'smk':{short:'SMK',label:'SMK · Museu Nacional da Dinamarca (pinturas e desenhos)',def:'painting',terms:ART_TERMS,
+    note:'Obras em domínio público do Statens Museum for Kunst (Dinamarca).',search:smkSearch,rand:()=>PAGE*rc(6)},
+  'wellcome':{short:'Wellcome',label:'Wellcome Collection · ilustrações médicas e botânicas, mapas, gravuras',def:'botanical',terms:MED_TERMS,
+    note:'Acervo digital do Wellcome (ilustrações científicas, botânica, anatomia, mapas, gravuras). Licenças abertas (CC BY, CC0, domínio público…); confira o crédito.',
+    search:wellcomeSearch,rand:()=>1+rc(5)},
+  'nasa':{short:'NASA',label:'NASA · espaço e ciência',def:'space',terms:SPACE_TERMS,
+    note:'Biblioteca de imagens da NASA (em geral domínio público; confira os créditos).',search:nasaSearch,rand:()=>1+rc(6)},
+  'openverse-photo':{short:'Openverse fotos',label:'Openverse · fotografias',def:'landscape',terms:GEN_TERMS,
+    note:'Openverse reúne fotos com licenças Creative Commons e domínio público de várias coleções. Limite de uso anônimo: algumas buscas por minuto.',
+    search:openverse('photograph'),rand:()=>1+rc(6)},
+  'openverse-art':{short:'Openverse arte',label:'Openverse · ilustrações e obras digitalizadas',def:'painting',terms:ART_TERMS,
+    note:'Ilustrações, desenhos e obras digitalizadas com licenças Creative Commons ou domínio público.',
+    search:openverse('illustration,digitized_artwork'),rand:()=>1+rc(6)}
 };
+const REAL_IDS=Object.keys(PROVIDERS);
+
+/* --- todas as galerias ao mesmo tempo --- */
+async function allSearch(term,cursor){
+  const cur=cursor||{};
+  const ids=REAL_IDS.filter(id=>cur[id]!==null);
+  const res=await Promise.allSettled(ids.map(id=>PROVIDERS[id].search(term,cur[id])));
+  const next={}, lists=[], failed=[];
+  ids.forEach((id,i)=>{
+    const r=res[i];
+    if(r.status==='fulfilled'){ next[id]=r.value.next; lists.push(r.value.items.map(it=>({...it,credit:[it.credit,PROVIDERS[id].short].filter(Boolean).join(' · '),src:PROVIDERS[id].short}))); }
+    else { next[id]=null; failed.push(`${PROVIDERS[id].short} (${r.reason&&r.reason.message||'erro'})`); }
+  });
+  if(failed.length===ids.length) throw new Error(failed.join('; '));
+  const items=[], seen=new Set(); let more=true;
+  for(let i=0;more;i++){ more=false; for(const l of lists){ if(i<l.length){ more=true; if(!seen.has(l[i].thumb)){ seen.add(l[i].thumb); items.push(l[i]); } } } }
+  const merged={...cur,...next};
+  return {items,next:Object.values(merged).some(v=>v!=null&&v!==undefined)?merged:null,failed};
+}
+PROVIDERS={all:{short:'Todas',label:'★ Todas as galerias ao mesmo tempo',def:'landscape',terms:GEN_TERMS,
+  note:'Busca em todas as galerias de uma vez e mistura os resultados. Se alguma não responder, as outras continuam.',
+  search:allSearch,rand:()=>Object.fromEntries(REAL_IDS.map(id=>[id,PROVIDERS[id].rand()]))},...PROVIDERS};
 if(!PROVIDERS[prefs.source]) prefs.source='commons-featured';
 const prov = () => PROVIDERS[prefs.source];
 
@@ -847,39 +963,40 @@ const PT = {paisagem:'landscape',paisagens:'landscape',montanha:'mountain',monta
   animal:'animal',animais:'animal',passaro:'bird',passaros:'bird',ave:'bird',aves:'bird',cidade:'city',cidades:'city',floresta:'forest',jardim:'garden',cachoeira:'waterfall',
   lago:'lake',ponte:'bridge',castelo:'castle',gato:'cat',gatos:'cat',cachorro:'dog',cao:'dog',borboleta:'butterfly',ceu:'sky',neve:'snow',rio:'river',ilha:'island',
   igreja:'church',barco:'boat',navio:'ship',deserto:'desert',outono:'autumn',inverno:'winter',cavalo:'horse',noite:'night',nuvens:'clouds',arvore:'tree',arvores:'trees',
-  arquitetura:'architecture',sol:'sun',lua:'moon',estrelas:'stars',fruta:'fruit',frutas:'fruit',comida:'food',peixe:'fish',inseto:'insect',
+  arquitetura:'architecture',sol:'sun',lua:'moon',estrelas:'stars',estrela:'star',fruta:'fruit',frutas:'fruit',comida:'food',peixe:'fish',inseto:'insect',
   pintura:'painting',pinturas:'painting',desenho:'drawing',desenhos:'drawing',mapa:'map',mapas:'map',retrato:'portrait',gravura:'engraving',ilustracao:'illustration',
   violino:'violin',violao:'guitar',instrumento:'musical instrument',instrumentos:'musical instruments',musicais:'',musical:'',mulher:'woman',homem:'man',crianca:'child',
-  projeto:'blueprint',planta:'plant',botanica:'botanical',botanico:'botanical'};
+  projeto:'blueprint',planta:'plant',botanica:'botanical',botanico:'botanical',espaco:'space',planeta:'planet',planetas:'planet',nebulosa:'nebula',galaxia:'galaxy',
+  astronauta:'astronaut',foguete:'rocket',anatomia:'anatomy'};
 function translate(q){
   const norm=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
   if(/por do sol/.test(norm)) return norm.replace(/por do sol/g,'sunset');
   return norm.split(/\s+/).map(w=>PT[w]!==undefined?PT[w]:w).filter(Boolean).join(' ');
 }
-const CHIPS=[['Paisagens','landscape'],['Montanhas','mountain'],['Mar','sea'],['Flores','flower'],['Animais','animal'],['Pássaros','bird'],['Cidades','city'],
+const CHIPS=[['Qualquer tema',''],['Paisagens','landscape'],['Montanhas','mountain'],['Mar','sea'],['Flores','flower'],['Animais','animal'],['Pássaros','bird'],['Cidades','city'],
   ['Arquitetura','architecture'],['Pôr do sol','sunset'],['Floresta','forest'],['Jardim','garden'],['Gatos','cat'],
   ['Pinturas','painting'],['Desenhos','drawing'],['Retratos','portrait'],['Mapas','map'],['Gravuras','engraving'],['Instrumentos musicais','musical instrument'],
-  ['Plantas técnicas','technical drawing'],['Ilustração botânica','botanical illustration']];
-const RANDOM_TERMS=['landscape','mountain','lake','forest','flower','bird','butterfly','city','architecture','sunset','beach','waterfall','animal','garden','bridge',
-  'castle','island','river','autumn','snow','cat','horse','sky','desert','harbour','village','insect','tree','coast','valley','map','drawing','musical instrument'];
-const ART_TERMS=['painting','portrait','landscape','still life','flowers','ship','horse','garden','musical instrument','map','drawing','cat','mountain','city','sea','bird','botanical illustration','engraving'];
+  ['Plantas técnicas','technical drawing'],['Ilustração botânica','botanical illustration'],['Espaço','space'],['Anatomia','anatomy']];
 const G={term:'',cursor:undefined,items:[],loading:false,seq:0};
 
 async function loadGallery(term,reset){
   if(G.loading && !reset) return;
   const my=++G.seq; G.loading=true;
   if(reset){ G.term=term; G.cursor=undefined; G.items=[]; $('#grid').textContent=''; }
+  const eff=G.term||prov().def;
   $('#gstatus').textContent='Carregando…'; $('#btnMore').hidden=true;
   try{
-    let res, tries=0;
-    do{ res=await prov().search(G.term,G.cursor); if(my!==G.seq) return; G.cursor=res.next; tries++; }
+    let res, tries=0, failed=[];
+    do{ res=await prov().search(eff,G.cursor); if(my!==G.seq) return; G.cursor=res.next; failed=failed.concat(res.failed||[]); tries++; }
     while(!res.items.length && res.next!=null && tries<4);
     G.items.push(...res.items); renderGrid(res.items);
-    $('#gstatus').textContent=G.items.length?'':'Nenhuma imagem encontrada. Tente outro termo (em inglês costuma funcionar melhor) ou outro banco de imagens.';
+    let msg=G.items.length?'':'Nenhuma imagem encontrada. Tente outro termo (em inglês costuma funcionar melhor) ou outra galeria.';
+    if(failed.length) msg=(msg?msg+' ':'')+'Não responderam: '+[...new Set(failed)].join('; ')+'.';
+    $('#gstatus').textContent=msg;
     $('#btnMore').hidden=res.next==null||!res.items.length;
   }catch(err){
     if(my!==G.seq) return;
-    $('#gstatus').textContent='Não foi possível carregar esse banco agora. Tente outro banco de imagens, verifique a conexão ou envie a sua própria imagem.';
+    $('#gstatus').textContent=`Não foi possível carregar “${prov().short}”: ${err.message}. Tente “Testar galerias”, escolha outra galeria ou envie a sua própria imagem.`;
   }finally{ if(my===G.seq) G.loading=false; }
 }
 function renderGrid(items){
@@ -910,7 +1027,7 @@ function selectItem(it,btn){
 const srcSel=$('#source');
 Object.entries(PROVIDERS).forEach(([id,pr])=>{ const o=document.createElement('option'); o.value=id; o.textContent=pr.label; srcSel.appendChild(o); });
 srcSel.value=prefs.source; $('#srcNote').textContent=prov().note;
-srcSel.onchange=()=>{ prefs.source=srcSel.value; savePrefs(); $('#srcNote').textContent=prov().note; loadGallery(G.term||prefs.query||'landscape',true); };
+srcSel.onchange=()=>{ prefs.source=srcSel.value; savePrefs(); $('#srcNote').textContent=prov().note; loadGallery(prefs.query,true); };
 
 $('#btnMore').onclick=()=>loadGallery(G.term,false);
 $('#searchForm').onsubmit=e=>{ e.preventDefault(); const q=$('#q').value.trim(); if(!q) return; markChip(null); prefs.query=translate(q); prefs.label=q; savePrefs(); loadGallery(prefs.query,true); };
@@ -920,22 +1037,42 @@ CHIPS.forEach(([label,term])=>{
   b.onclick=()=>{ $('#q').value=''; markChip(term); prefs.query=term; prefs.label=label; savePrefs(); loadGallery(term,true); };
   $('#chips').appendChild(b);
 });
-$('#btnRandom').onclick=async()=>{
-  const btn=$('#btnRandom'); btn.disabled=true; const old=btn.textContent; btn.textContent='Sorteando…';
+
+/* --- sorteio --- */
+let randBusy=false;
+async function pickRandom(surprise){
+  if(randBusy) return; randBusy=true;
+  const btns=[$('#btnRandom'),$('#btnRandomAll')], olds=btns.map(b=>b.textContent);
+  btns.forEach(b=>b.disabled=true); (surprise?btns[1]:btns[0]).textContent='Sorteando…';
+  let lastErr=null;
   try{
-    const pr=prov(), terms=pr.art?ART_TERMS:RANDOM_TERMS;
-    for(let tries=0;tries<3;tries++){
-      const term=terms[Math.floor(Math.random()*terms.length)];
-      const res=await pr.search(term,tries?undefined:pr.rand());
+    for(let tries=0;tries<6;tries++){
+      let pr, term;
+      if(surprise){ pr=PROVIDERS[REAL_IDS[rc(REAL_IDS.length)]]; term=pr.terms[rc(pr.terms.length)]; }       // qualquer galeria, qualquer tema
+      else { pr=prov(); term=prefs.query||pr.terms[rc(pr.terms.length)]; }                                      // galeria e busca atuais
+      let res;
+      try{ res=await pr.search(term, tries%2===0 ? pr.rand() : undefined); }catch(e){ lastErr=e; continue; }
       if(res.items.length){
-        const it=res.items[Math.floor(Math.random()*res.items.length)];
+        const it=res.items[rc(res.items.length)];
         selectItem(it,null);
-        toast(`Sorteada: ${it.title}`,2500); return;
+        toast(`Sorteada${surprise?` (${pr.short})`:''}: ${it.title}`,2800); return;
       }
     }
-    toast('Não consegui sortear agora. Tente de novo ou troque o banco de imagens.');
-  }catch{ toast('Sem conexão com esse banco. Tente outro ou envie sua própria imagem.'); }
-  finally{ btn.disabled=false; btn.textContent=old; }
+    toast(lastErr?`Não consegui sortear: ${lastErr.message}. Use “Testar galerias” ou tente outra galeria.`:'Nenhuma imagem encontrada com esses filtros. Tente outro termo ou galeria.',5000);
+  }finally{ btns.forEach((b,i)=>{ b.disabled=false; b.textContent=olds[i]; }); randBusy=false; }
+}
+$('#btnRandom').onclick=()=>pickRandom(false);
+$('#btnRandomAll').onclick=()=>pickRandom(true);
+
+/* --- teste de conexão das galerias --- */
+$('#btnDiag').onclick=async()=>{
+  const box=$('#diag'); box.hidden=false; box.textContent='Testando as galerias…';
+  const rows=await Promise.all(REAL_IDS.map(async id=>{
+    const t=performance.now();
+    try{ const r=await PROVIDERS[id].search('cat'); return `✓ ${PROVIDERS[id].short}: ${r.items.length} imagens (${Math.round(performance.now()-t)} ms)`; }
+    catch(e){ return `✗ ${PROVIDERS[id].short}: ${e.message}`; }
+  }));
+  box.textContent=''; rows.forEach(t=>{ const d=document.createElement('div'); d.textContent=t; box.appendChild(d); });
 };
 
 /* --- upload --- */
